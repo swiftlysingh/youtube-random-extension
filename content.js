@@ -32,8 +32,15 @@
       display: 'flex',
       alignItems: 'center',
       fontSize: '14px',
-      fontFamily: 'Roboto, Arial, sans-serif'
+      fontFamily: 'Roboto, Arial, sans-serif',
+      fontWeight: '500'  // Added font-weight to match YouTube's bold text
     });
+
+    // Make the text element bold as well
+    const textElement = wrapper.querySelector('.text');
+    if (textElement) {
+      textElement.style.fontWeight = '500';
+    }
 
     return wrapper;
   }
