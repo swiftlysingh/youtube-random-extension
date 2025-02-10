@@ -3,19 +3,37 @@
   let currentButtonObserver = null;
 
   function createRandomButton() {
-    const wrapper = document.createElement('ytd-chip-cloud-chip-renderer');
+    const wrapper = document.createElement('yt-chip-cloud-chip-renderer');
     wrapper.className = 'style-scope ytd-feed-filter-chip-bar-renderer';
-    wrapper.setAttribute('system-icons', '');
-    wrapper.setAttribute('is-dark', '');
+    wrapper.setAttribute('modern', '');
+    wrapper.setAttribute('aria-selected', 'false');
+    wrapper.setAttribute('role', 'tab');
+    wrapper.setAttribute('tabindex', '0');
+    wrapper.setAttribute('chip-style', 'STYLE_DEFAULT');
     wrapper.id = 'random-video-button-wrapper';
 
     wrapper.innerHTML = `
-      <yt-chip-cloud-renderer class="style-scope ytd-chip-cloud-chip-renderer" is-dark system-icons>
-        <div id="chip-container" class="style-scope yt-chip-cloud-renderer" role="button" tabindex="0">
-          <div id="text" class="style-scope yt-chip-cloud-renderer" aria-label="Random">Random</div>
-        </div>
-      </yt-chip-cloud-renderer>
+      <div id="chip" class="style-scope yt-chip-cloud-chip-renderer" role="tab" aria-selected="false">
+        <div class="text style-scope yt-chip-cloud-chip-renderer">Random</div>
+      </div>
+      <tp-yt-paper-tooltip class="style-scope yt-chip-cloud-chip-renderer" role="tooltip">Random</tp-yt-paper-tooltip>
     `;
+
+    const chipElement = wrapper.querySelector('#chip');
+    Object.assign(chipElement.style, {
+      backgroundColor: 'var(--yt-spec-badge-chip-background)',
+      color: 'var(--yt-spec-text-primary)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '0 12px',
+      height: '32px',
+      lineHeight: '32px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      fontSize: '14px',
+      fontFamily: 'Roboto, Arial, sans-serif'
+    });
 
     return wrapper;
   }
@@ -155,12 +173,12 @@
       }
 
       // Check if button already exists
-      if (document.getElementById('random-video-button')) {
+      if (document.getElementById('random-video-button-wrapper')) {
         return;
       }
 
-      // Wait for the sort buttons container
-      const sortContainer = await waitForElement('ytd-feed-filter-chip-bar-renderer #chips-wrapper');
+      // Wait for the sort buttons container and iron-selector
+      const sortContainer = await waitForElement('#chips');
       if (!sortContainer) return;
 
       // Remove any existing buttons
@@ -181,14 +199,14 @@
         sortContainer.appendChild(buttonElement);
       }
 
-      const chipContainer = buttonElement.querySelector('#chip-container');
-      chipContainer.addEventListener('click', async function(e) {
+      const chipElement = buttonElement.querySelector('#chip');
+      chipElement.addEventListener('click', async function(e) {
         e.preventDefault();
-        if (chipContainer.disabled) return;
+        if (this.disabled) return;
         
         try {
-          chipContainer.disabled = true;
-          chipContainer.querySelector('#text').textContent = 'Loading...';
+          this.disabled = true;
+          this.style.opacity = '0.5';
           
           const success = await clickRandomVideo();
           
@@ -198,8 +216,8 @@
         } catch (error) {
           console.error('Random video error:', error);
           alert('Could not find videos. Please try again.');
-          chipContainer.disabled = false;
-          chipContainer.querySelector('#text').textContent = 'Random';
+          this.disabled = false;
+          this.style.opacity = '1';
         }
       });
 
