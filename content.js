@@ -3,11 +3,21 @@
   let currentButtonObserver = null;
 
   function createRandomButton() {
-    const button = document.createElement('button');
-    button.innerHTML = 'Random';
-    button.className = 'yt-chip-cloud-chip-renderer style-scope ytd-feed-filter-chip-bar-renderer';
-    button.style.cursor = 'pointer';
-    return button;
+    const wrapper = document.createElement('ytd-chip-cloud-chip-renderer');
+    wrapper.className = 'style-scope ytd-feed-filter-chip-bar-renderer';
+    wrapper.setAttribute('system-icons', '');
+    wrapper.setAttribute('is-dark', '');
+    wrapper.id = 'random-video-button-wrapper';
+
+    wrapper.innerHTML = `
+      <yt-chip-cloud-renderer class="style-scope ytd-chip-cloud-chip-renderer" is-dark system-icons>
+        <div id="chip-container" class="style-scope yt-chip-cloud-renderer" role="button" tabindex="0">
+          <div id="text" class="style-scope yt-chip-cloud-renderer" aria-label="Random">Random</div>
+        </div>
+      </yt-chip-cloud-renderer>
+    `;
+
+    return wrapper;
   }
 
   function waitForElement(selector) {
@@ -144,32 +154,41 @@
         currentButtonObserver = null;
       }
 
-      // Wait for the sort buttons container
-      const sortContainer = await waitForElement('#chips-wrapper');
-      if (!sortContainer) return;
-
-      // Remove existing button if any
-      const existingBtn = document.querySelector('.random-video-btn');
-      if (existingBtn) {
-        existingBtn.remove();
+      // Check if button already exists
+      if (document.getElementById('random-video-button')) {
+        return;
       }
 
-      const randomBtn = createRandomButton();
-      
-      // Create wrapper similar to other sort buttons
-      const wrapper = document.createElement('yt-chip-cloud-chip-renderer');
-      wrapper.className = 'style-scope ytd-feed-filter-chip-bar-renderer';
-      wrapper.appendChild(randomBtn);
+      // Wait for the sort buttons container
+      const sortContainer = await waitForElement('ytd-feed-filter-chip-bar-renderer #chips-wrapper');
+      if (!sortContainer) return;
 
-      // Insert after the last sort button
-      sortContainer.appendChild(wrapper);
+      // Remove any existing buttons
+      const existingButtons = sortContainer.querySelectorAll('[id^="random-video-button"]');
+      existingButtons.forEach(btn => btn.remove());
 
-      randomBtn.addEventListener('click', async function() {
-        if (randomBtn.disabled) return;
+      const buttonElement = createRandomButton();
+
+      // Find the "Oldest" chip and insert after it
+      const chips = Array.from(sortContainer.children);
+      const oldestChip = chips.find(chip => 
+        chip.textContent.trim().includes('Oldest')
+      );
+
+      if (oldestChip) {
+        oldestChip.after(buttonElement);
+      } else {
+        sortContainer.appendChild(buttonElement);
+      }
+
+      const chipContainer = buttonElement.querySelector('#chip-container');
+      chipContainer.addEventListener('click', async function(e) {
+        e.preventDefault();
+        if (chipContainer.disabled) return;
         
         try {
-          randomBtn.disabled = true;
-          randomBtn.innerHTML = 'Loading...';
+          chipContainer.disabled = true;
+          chipContainer.querySelector('#text').textContent = 'Loading...';
           
           const success = await clickRandomVideo();
           
@@ -179,8 +198,8 @@
         } catch (error) {
           console.error('Random video error:', error);
           alert('Could not find videos. Please try again.');
-          randomBtn.disabled = false;
-          randomBtn.innerHTML = 'Random';
+          chipContainer.disabled = false;
+          chipContainer.querySelector('#text').textContent = 'Random';
         }
       });
 
@@ -196,23 +215,25 @@
       return;
     }
 
-    // More aggressive button insertion
-    let retryCount = 0;
-    const tryInsertButton = () => {
-      if (window.location.pathname.includes('/@')) {
-        insertButton().catch(() => {
-          if (retryCount < 5) {
-            retryCount++;
-            setTimeout(tryInsertButton, 500);
-          }
-        });
+    let isProcessing = false;
+    let timeout = null;
+
+    const tryInsertButton = async () => {
+      if (isProcessing) return;
+      
+      try {
+        isProcessing = true;
+        if (window.location.pathname.includes('/@')) {
+          await insertButton();
+        }
+      } finally {
+        isProcessing = false;
       }
     };
 
-    let timeout = null;
     navigationObserver = new MutationObserver(() => {
       if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(tryInsertButton, 100);
+      timeout = setTimeout(tryInsertButton, 500);
     });
 
     navigationObserver.observe(ytdApp, {
@@ -222,7 +243,7 @@
 
     // Initial insertion
     if (window.location.pathname.includes('/@')) {
-      insertButton();
+      tryInsertButton();
     }
   }
 
