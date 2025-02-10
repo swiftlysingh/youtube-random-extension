@@ -1,0 +1,42 @@
+.random-btn-container {
+  order: 1 !important;
+  display: inline-flex !important;
+  margin: 0 4px !important;
+  position: relative !important;
+  flex: 0 0 auto !important;
+}
+
+.random-video-btn {
+  white-space: nowrap !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 64px !important;
+  padding: 0 16px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+  line-height: 36px !important;
+  border-radius: 18px !important;
+  border: 1px solid var(--yt-spec-text-secondary) !important;
+  background: transparent !important;
+  color: var(--yt-spec-text-primary) !important;
+  flex: 0 0 auto !important;
+  z-index: 1 !important;
+}
+
+.random-video-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.random-video-btn:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+ytd-channel-actions-renderer {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+}
