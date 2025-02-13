@@ -1,6 +1,7 @@
 (function() {
   let navigationObserver = null;
   let currentButtonObserver = null;
+  let lastUrl = '';
 
   function createRandomButton() {
     const wrapper = document.createElement('yt-chip-cloud-chip-renderer');
@@ -233,6 +234,35 @@
     }
   }
 
+  async function tryInsertButtonWithRetry() {
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    const attemptInsertion = async () => {
+      try {
+        await insertButton();
+        return true;
+      } catch (error) {
+        console.error('Button insertion attempt failed:', error);
+        return false;
+      }
+    };
+
+    while (attempts < maxAttempts) {
+      if (await attemptInsertion()) {
+        break;
+      }
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  function isChannelPage() {
+    return window.location.pathname.includes('/@') && 
+           (window.location.pathname.endsWith('/videos') || 
+            window.location.pathname.split('/').length === 2);
+  }
+
   function init() {
     const ytdApp = document.querySelector('ytd-app');
     if (!ytdApp) {
@@ -241,34 +271,40 @@
     }
 
     let isProcessing = false;
-    let timeout = null;
 
-    const tryInsertButton = async () => {
-      if (isProcessing) return;
-      
-      try {
-        isProcessing = true;
-        if (window.location.pathname.includes('/@')) {
-          await insertButton();
+    // Watch for URL changes
+    const checkForUrlChange = () => {
+      if (window.location.href !== lastUrl) {
+        lastUrl = window.location.href;
+        if (isChannelPage()) {
+          tryInsertButtonWithRetry();
         }
-      } finally {
-        isProcessing = false;
       }
     };
 
-    navigationObserver = new MutationObserver(() => {
-      if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(tryInsertButton, 500);
+    // Create observer for URL changes
+    const urlObserver = new MutationObserver(() => {
+      if (!isProcessing) {
+        isProcessing = true;
+        checkForUrlChange();
+        setTimeout(() => { isProcessing = false; }, 100);
+      }
     });
 
-    navigationObserver.observe(ytdApp, {
+    // Observe both navigation and content changes
+    urlObserver.observe(document.body, {
       childList: true,
       subtree: true
     });
 
-    // Initial insertion
-    if (window.location.pathname.includes('/@')) {
-      tryInsertButton();
+    navigationObserver = urlObserver;
+
+    // Set initial URL
+    lastUrl = window.location.href;
+
+    // Initial check
+    if (isChannelPage()) {
+      tryInsertButtonWithRetry();
     }
   }
 
