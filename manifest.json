@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Random Extension",
-  "version": "1.0",
-  "description": "Adds a random video button on YouTube channel pages.",
+  "name": "YouTube Random Video",
+  "version": "1.0.0",
+  "description": "Adds a Random button to YouTube channels to play random videos",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": [
     "tabs",
     "webNavigation"
@@ -13,14 +18,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.youtube.com/channel/*",
-        "https://www.youtube.com/c/*",
-        "https://www.youtube.com/@*",
-        "https://www.youtube.com/@*/featured",
-        "https://www.youtube.com/@*/videos",
-        "https://www.youtube.com/@*/playlists",
-        "https://www.youtube.com/@*/community",
-        "https://www.youtube.com/@*/about"
+        "*://*.youtube.com/*"
       ],
       "css": [
         "styles.css"
